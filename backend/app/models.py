@@ -1,5 +1,6 @@
 import uuid
 
+from datetime import datetime
 from pydantic import EmailStr
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -44,6 +45,8 @@ class User(UserBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     hashed_password: str
     items: list["Item"] = Relationship(back_populates="owner", cascade_delete=True)
+    worklogs: list["WorkLog"] = Relationship(back_populates="user", cascade_delete=True)
+    remittances: list["Remittance"] = Relationship(back_populates="user", cascade_delete=True)
 
 
 # Properties to return via API, id is always required
@@ -111,3 +114,45 @@ class TokenPayload(SQLModel):
 class NewPassword(SQLModel):
     token: str
     new_password: str = Field(min_length=8, max_length=128)
+
+
+class WorkLog(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    task_name: str = Field(max_length=255)
+    user_id: uuid.UUID = Field(foreign_key="user.id", nullable=False, ondelete="CASCADE")
+    user: User = Relationship(back_populates="worklogs")
+    segments: list["TimeSegment"] = Relationship(back_populates="worklog", cascade_delete=True)
+    deductions: list["Deduction"] = Relationship(back_populates="worklog", cascade_delete=True)
+    line_items: list["RemittanceLineItem"] = Relationship(back_populates="worklog")
+
+class TimeSegment(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    worklog_id: uuid.UUID = Field(foreign_key="worklog.id", nullable=False, ondelete="CASCADE")
+    hours: float
+    hourly_rate: float
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    worklog: WorkLog = Relationship(back_populates="segments")
+
+class Deduction(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    worklog_id: uuid.UUID = Field(foreign_key="worklog.id", nullable=False, ondelete="CASCADE")
+    amount: float
+    reason: str | None = Field(default=None, max_length=255)
+    worklog: WorkLog = Relationship(back_populates="deductions")
+
+class Remittance(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    user_id: uuid.UUID = Field(foreign_key="user.id", nullable=False, ondelete="CASCADE")
+    total_amount: float
+    status: str = Field(default="REMITTED")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    user: User = Relationship(back_populates="remittances")
+    line_items: list["RemittanceLineItem"] = Relationship(back_populates="remittance", cascade_delete=True)
+
+class RemittanceLineItem(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    remittance_id: uuid.UUID = Field(foreign_key="remittance.id", nullable=False, ondelete="CASCADE")
+    worklog_id: uuid.UUID = Field(foreign_key="worklog.id", nullable=False, ondelete="CASCADE")
+    amount_settled: float
+    remittance: Remittance = Relationship(back_populates="line_items")
+    worklog: WorkLog = Relationship(back_populates="line_items")
