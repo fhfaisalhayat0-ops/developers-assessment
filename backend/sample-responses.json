@@ -1,0 +1,19 @@
+{
+  "list_all_worklogs": [
+    {
+      "worklog_id": "550e8400-e29b-41d4-a716-446655440000",
+      "task_name": "Backend Refactor",
+      "amount": 450.0,
+      "status": "UNREMITTED"
+    },
+    {
+      "worklog_id": "678e8400-e29b-41d4-a716-446655441111",
+      "task_name": "Documentation",
+      "amount": 0.0,
+      "status": "REMITTED"
+    }
+  ],
+  "generate_remittances": {
+    "message": "Successfully generated 2 remittances."
+  }
+}
