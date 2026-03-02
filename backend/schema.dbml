@@ -1,0 +1,41 @@
+Table users {
+  id uuid [pk]
+  email varchar
+  full_name varchar
+}
+
+Table worklogs {
+  id uuid [pk]
+  user_id uuid [ref: > users.id]
+  task_name varchar
+}
+
+Table time_segments {
+  id uuid [pk]
+  worklog_id uuid [ref: > worklogs.id]
+  hours float
+  hourly_rate float
+  created_at timestamp
+}
+
+Table deductions {
+  id uuid [pk]
+  worklog_id uuid [ref: > worklogs.id]
+  amount float
+  reason varchar
+}
+
+Table remittances {
+  id uuid [pk]
+  user_id uuid [ref: > users.id]
+  total_amount float
+  status varchar // REMITTED, FAILED, PENDING
+  created_at timestamp
+}
+
+Table remittance_line_items {
+  id uuid [pk]
+  remittance_id uuid [ref: > remittances.id]
+  worklog_id uuid [ref: > worklogs.id]
+  amount_settled float
+}
